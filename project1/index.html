@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>1-Minute Typing Test (Easy JS)</title>
+  <style>
+    body{font-family:system-ui,Arial;max-width:900px;margin:24px auto;padding:0 16px;color:#111}
+    h1{font-size:20px;margin-bottom:6px}
+    .card{border:1px solid #ddd;padding:14px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.03)}
+    .sample{background:#f9f9f9;padding:12px;border-radius:6px;margin-bottom:8px;line-height:1.5}
+    textarea{width:100%;height:140px;padding:10px;font-size:16px;resize:none}
+    .controls{display:flex;gap:8px;margin:10px 0}
+    button{padding:8px 12px;border-radius:6px;border:1px solid #888;background:#fff;cursor:pointer}
+    button:disabled{opacity:0.5;cursor:not-allowed}
+    .stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .stat{background:#fff;border:1px solid #eee;padding:10px;border-radius:6px;min-width:120px}
+    .result{margin-top:12px;padding:12px;background:#eef9ff;border-radius:6px}
+    .mistake{color:#b00}
+    small{color:#555}
+  </style>
+</head>
+<body>
+  <h1>Typing Test — 1 Minute (Simple JavaScript)</h1>
+  <div class="card">
+    <div class="sample" id="sampleText">
+      This is a simple typing test paragraph. You need to type this text exactly as it is. Typing correctly will help you improve your speed and accuracy.
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">Start 1-minute test</button>
+      <button id="resetBtn">Reset</button>
+      <div style="margin-left:auto">
+        <strong>Time:</strong> <span id="time">60</span>s
+      </div>
+    </div>
+
+    <textarea id="input" placeholder="Type the above paragraph here..." disabled></textarea>
+
+    <div class="stats">
+      <div class="stat">WPM: <strong id="wpm">0</strong></div>
+      <div class="stat">Accuracy: <strong id="acc">0</strong>%</div>
+      <div class="stat">Correct chars: <strong id="correct">0</strong></div>
+      <div class="stat">Mistakes: <strong id="mistakes">0</strong></div>
+    </div>
+
+    <div class="result" id="final" style="display:none">
+      <h3>Final result</h3>
+      <p><strong>Speed (WPM):</strong> <span id="finalWpm">0</span></p>
+      <p><strong>Accuracy:</strong> <span id="finalAcc">0</span>%</p>
+      <p><strong>Typed characters:</strong> <span id="finalTyped">0</span> &nbsp; <span class="mistake">(<span id="finalMistakes">0</span> mistakes)</span></p>
+    </div>
+  </div>
+
+  <script>
+    // Simple and easy JS typing test. Uses setInterval for timer as requested.
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const input = document.getElementById('input');
+    const sampleText = document.getElementById('sampleText').innerText.trim();
+
+    const timeEl = document.getElementById('time');
+    const wpmEl = document.getElementById('wpm');
+    const accEl = document.getElementById('acc');
+    const correctEl = document.getElementById('correct');
+    const mistakesEl = document.getElementById('mistakes');
+
+    const finalBox = document.getElementById('final');
+    const finalWpm = document.getElementById('finalWpm');
+    const finalAcc = document.getElementById('finalAcc');
+    const finalTyped = document.getElementById('finalTyped');
+    const finalMistakes = document.getElementById('finalMistakes');
+
+    let timer = null;
+    let timeLeft = 60; // seconds
+    let started = false;
+    let startTime = null;
+
+    function resetAll(){
+      clearInterval(timer);
+      timer = null;
+      timeLeft = 60;
+      timeEl.innerText = timeLeft;
+      input.value = '';
+      input.disabled = true;
+      started = false;
+      startBtn.disabled = false;
+      wpmEl.innerText = '0';
+      accEl.innerText = '0';
+      correctEl.innerText = '0';
+      mistakesEl.innerText = '0';
+      finalBox.style.display = 'none';
+    }
+
+    function calcStats(){
+      const typed = input.value;
+      const typedLen = typed.length;
+      let correctChars = 0;
+      for(let i=0;i<typedLen;i++){
+        if(typed[i] === sampleText[i]) correctChars++;
+      }
+      const mistakes = typedLen - correctChars;
+      // Accuracy: correct chars / typed chars
+      const accuracy = typedLen === 0 ? 0 : Math.round((correctChars / typedLen) * 100);
+
+      // WPM: (correct chars / 5) / minutes
+      const elapsedSec = started ? Math.max(1, Math.round((Date.now() - startTime)/1000)) : 0; // avoid 0
+      const minutes = elapsedSec / 60;
+      const wpm = minutes === 0 ? 0 : Math.round((correctChars / 5) / minutes);
+
+      // update UI
+      wpmEl.innerText = wpm;
+      accEl.innerText = accuracy;
+      correctEl.innerText = correctChars;
+      mistakesEl.innerText = mistakes;
+
+      return {wpm, accuracy, correctChars, mistakes, typedLen};
+    }
+
+    input.addEventListener('input', ()=>{
+      // live stats while typing
+      calcStats();
+    });
+
+    startBtn.addEventListener('click', ()=>{
+      resetAll();
+      input.disabled = false;
+      input.focus();
+      startBtn.disabled = true;
+      started = true;
+      startTime = Date.now();
+
+      timer = setInterval(()=>{
+        timeLeft--;
+        timeEl.innerText = timeLeft;
+        const stats = calcStats();
+
+        if(timeLeft <= 0){
+          // finish test
+          clearInterval(timer);
+          input.disabled = true;
+          started = false;
+          showFinal(stats);
+        }
+      }, 1000);
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      resetAll();
+    });
+
+    function showFinal(stats){
+      finalWpm.innerText = stats.wpm;
+      finalAcc.innerText = stats.accuracy;
+      finalTyped.innerText = stats.typedLen;
+      finalMistakes.innerText = stats.mistakes;
+      finalBox.style.display = 'block';
+    }
+
+    // initial state
+    resetAll();
+
+  </script>
+</body>
+</html>
